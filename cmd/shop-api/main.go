@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	config := config.NewConfig()
+	config := config.NewServerConfig()
 
 	server, err := apiserver.New(config)
 	if err != nil {

@@ -65,7 +65,7 @@ func (s *Server) configureRouter() {
 				http.MethodPost,
 			},
 		},
-		"/items/{id:[0-9]+}/": {
+		"/items/{id:[0-9]+}": {
 			s.handlerItems,
 			[]string{
 				http.MethodGet,
