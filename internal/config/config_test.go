@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewServerConfig(t *testing.T) {
+func TestNewConfig(t *testing.T) {
 	tests := []struct {
 		name string
 	}{
@@ -16,7 +16,7 @@ func TestNewServerConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewServerConfig()
+			got := NewConfig()
 			assert.NotNil(t, got)
 		})
 	}

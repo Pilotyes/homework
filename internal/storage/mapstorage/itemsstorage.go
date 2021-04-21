@@ -3,10 +3,19 @@ package mapstorage
 import (
 	"errors"
 	"shop-api/internal/model"
+	"sync"
+
+	"shop-api/internal/storage/internal/cache"
+
+	"github.com/sirupsen/logrus"
 )
 
+//ItemsRepository ...
 type ItemsRepository struct {
-	items map[int]*model.Item
+	mutex  sync.Mutex
+	items  map[model.ItemID]*model.Item
+	cache  *cache.Cache
+	logger *logrus.Entry
 }
 
 //GetItems ...
@@ -21,7 +30,11 @@ func (i *ItemsRepository) GetItems() []*model.Item {
 }
 
 //GetItem ...
-func (i *ItemsRepository) GetItem(id int) *model.Item {
+func (i *ItemsRepository) GetItem(id model.ItemID) *model.Item {
+	if item := i.cache.Get(id.GetString()); item != nil {
+		return item
+	}
+
 	return i.items[id]
 }
 
@@ -32,19 +45,30 @@ func (i *ItemsRepository) PutItem(item *model.Item) (*model.Item, error) {
 	}
 
 	newID := len(i.items) + 1
-	item.Id = newID
-	i.items[newID] = item
+	item.ID = model.ItemID(newID)
+
+	logger := i.logger.WithFields(logrus.Fields{
+		"id": item.ID,
+	})
+
+	i.mutex.Lock()
+	i.items[item.ID] = item
+	i.mutex.Unlock()
+	logger.Infof("Created new item: %#v\n", item)
+
+	i.cache.Set(item.ID.GetString(), item)
 
 	return item, nil
 }
 
 //DeleteItem ...
-func (i *ItemsRepository) DeleteItem(id int) error {
+func (i *ItemsRepository) DeleteItem(id model.ItemID) error {
 	if _, ok := i.items[id]; !ok {
 		return errors.New("ID not found")
 	}
 
 	delete(i.items, id)
+	i.cache.Delete(id.GetString())
 
 	return nil
 }

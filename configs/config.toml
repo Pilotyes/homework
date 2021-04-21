@@ -1,0 +1,18 @@
+#Commented lines are default values
+
+[server]
+#bind_addr = ":8080"
+log_level = "debug"
+#cache_expiration_time = 300 #in seconds
+#cache_cleanup_interval = 600 #in seconds
+
+[databases]
+#driver = "internal"
+
+#----- Database drivers section -----
+[mongo_db]
+#mongo_db_server = "localhost"
+#mongo_db_port = 27017
+
+[internal]
+#----- Database drivers section end -----
