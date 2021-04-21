@@ -3,12 +3,18 @@ package mapstorage
 import (
 	"reflect"
 	"shop-api/internal/model"
+	"shop-api/internal/storage/internal/cache"
 	"testing"
+	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 func TestItemsRepository_GetItems(t *testing.T) {
+	price := 1.0
+
 	type fields struct {
-		items map[int]*model.Item
+		items map[model.ItemID]*model.Item
 	}
 	tests := []struct {
 		name   string
@@ -18,41 +24,43 @@ func TestItemsRepository_GetItems(t *testing.T) {
 		{
 			name: "Valid",
 			fields: fields{
-				items: map[int]*model.Item{
+				items: map[model.ItemID]*model.Item{
 					1: {
-						Id:          1,
+						ID:          1,
 						Name:        "Item 1",
 						Description: "Desription 1",
-						Price:       1.0,
+						Price:       &price,
 					},
 					2: {
-						Id:          2,
+						ID:          2,
 						Name:        "Item 2",
 						Description: "Desription 2",
-						Price:       2.0,
+						Price:       &price,
 					},
 				},
 			},
 			want: []*model.Item{
 				{
-					Id:          1,
+					ID:          1,
 					Name:        "Item 1",
 					Description: "Desription 1",
-					Price:       1.0,
+					Price:       &price,
 				},
 				{
-					Id:          2,
+					ID:          2,
 					Name:        "Item 2",
 					Description: "Desription 2",
-					Price:       2.0,
+					Price:       &price,
 				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			logger := logrus.New().WithFields(nil)
 			i := &ItemsRepository{
 				items: tt.fields.items,
+				cache: cache.NewCache(logger, time.Duration(0), time.Duration(0)),
 			}
 			if got := i.GetItems(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ItemsRepository.GetItems() = %v, want %v", got, tt.want)
@@ -62,8 +70,10 @@ func TestItemsRepository_GetItems(t *testing.T) {
 }
 
 func TestItemsRepository_PutItem(t *testing.T) {
+	price := 1.0
+
 	type fields struct {
-		items map[int]*model.Item
+		items map[model.ItemID]*model.Item
 	}
 	type args struct {
 		item *model.Item
@@ -78,27 +88,27 @@ func TestItemsRepository_PutItem(t *testing.T) {
 		{
 			name: "Valid",
 			fields: fields{
-				items: make(map[int]*model.Item),
+				items: make(map[model.ItemID]*model.Item),
 			},
 			args: args{
 				item: &model.Item{
 					Name:        "Item 1",
 					Description: "Desription 1",
-					Price:       1.0,
+					Price:       &price,
 				},
 			},
 			want: &model.Item{
-				Id:          1,
+				ID:          1,
 				Name:        "Item 1",
 				Description: "Desription 1",
-				Price:       1.0,
+				Price:       &price,
 			},
 			wantErr: false,
 		},
 		{
 			name: "Nil item",
 			fields: fields{
-				items: make(map[int]*model.Item),
+				items: make(map[model.ItemID]*model.Item),
 			},
 			args: args{
 				item: nil,
@@ -109,8 +119,11 @@ func TestItemsRepository_PutItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			logger := logrus.New().WithFields(nil)
 			i := &ItemsRepository{
-				items: tt.fields.items,
+				items:  tt.fields.items,
+				cache:  cache.NewCache(logger, time.Duration(0), time.Duration(0)),
+				logger: logrus.New().WithFields(nil),
 			}
 			got, err := i.PutItem(tt.args.item)
 			if (err != nil) != tt.wantErr {
@@ -125,11 +138,13 @@ func TestItemsRepository_PutItem(t *testing.T) {
 }
 
 func TestItemsRepository_DeleteItem(t *testing.T) {
+	price := 1.0
+
 	type fields struct {
-		items map[int]*model.Item
+		items map[model.ItemID]*model.Item
 	}
 	type args struct {
-		id int
+		id model.ItemID
 	}
 	tests := []struct {
 		name    string
@@ -140,11 +155,11 @@ func TestItemsRepository_DeleteItem(t *testing.T) {
 		{
 			name: "Valid",
 			fields: fields{
-				items: map[int]*model.Item{
+				items: map[model.ItemID]*model.Item{
 					1: {
 						Name:        "Item 1",
 						Description: "Description 1",
-						Price:       1.0,
+						Price:       &price,
 					},
 				},
 			},
@@ -156,7 +171,7 @@ func TestItemsRepository_DeleteItem(t *testing.T) {
 		{
 			name: "ID not found",
 			fields: fields{
-				items: map[int]*model.Item{},
+				items: map[model.ItemID]*model.Item{},
 			},
 			args: args{
 				id: 1,
@@ -166,8 +181,10 @@ func TestItemsRepository_DeleteItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			logger := logrus.New().WithFields(nil)
 			i := &ItemsRepository{
 				items: tt.fields.items,
+				cache: cache.NewCache(logger, time.Duration(0), time.Duration(0)),
 			}
 			if err := i.DeleteItem(tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("ItemsRepository.DeleteItem() error = %v, wantErr %v", err, tt.wantErr)

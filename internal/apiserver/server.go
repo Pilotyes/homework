@@ -18,29 +18,50 @@ import (
 
 //Server ...
 type Server struct {
-	config  *config.ServerConfig
+	config  *config.Config
 	logger  *logrus.Logger
 	router  *mux.Router
 	storage storage.Storage
 }
 
 //New ...
-func New(config *config.ServerConfig) (*Server, error) {
+func New(mainConfig *config.Config) (*Server, error) {
 	logger := logrus.New()
 
-	level, err := logrus.ParseLevel(config.LogLevel)
+	level, err := logrus.ParseLevel(mainConfig.Server.LogLevel)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.SetLevel(level)
 
-	logger.Debugf("Created new server with next config %#v\n", config)
+	logger.Debugf("Created new server with next config sections:\n")
+	logger.Debugf("\tServer: %#v\n", mainConfig.Server)
+	logger.Debugf("\tDatabases: %#v\n", mainConfig.Databases)
+	logger.Debugf("\tMongoDB: %#v\n", mainConfig.MongoDB)
+	logger.Debugf("\tInternal: %#v\n", mainConfig.Internal)
 
-	storage := mapstorage.New()
+	databaseDriver := ""
+	for _, driver := range config.DatabaseDrivers {
+		if mainConfig.Databases.Driver == driver {
+			databaseDriver = mainConfig.Databases.Driver
+		}
+	}
+
+	if databaseDriver == "" {
+		return nil, fmt.Errorf("%s database not supported yet", mainConfig.Databases.Driver)
+	}
+
+	var storage storage.Storage
+	switch databaseDriver {
+	case config.MongoDBDriver:
+		return nil, fmt.Errorf("Driver %s not implemented yet", config.MongoDBDriver)
+	case config.InternalDriver:
+		storage = mapstorage.New(mainConfig)
+	}
 
 	server := &Server{
-		config:  config,
+		config:  mainConfig,
 		logger:  logger,
 		router:  mux.NewRouter(),
 		storage: storage,
@@ -112,7 +133,7 @@ func (s *Server) handlerItems(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			item := s.storage.Items().GetItem(intID)
+			item := s.storage.Items().GetItem(model.ItemID(intID))
 			if item == nil {
 				w.WriteHeader(http.StatusNotFound)
 				fmt.Fprintln(w, errors.New("Item not found"))
@@ -155,6 +176,12 @@ func (s *Server) handlerItems(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if item.IsEmpty() {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, errors.New("Item must not be empty"))
+			return
+		}
+
 		item, err := s.storage.Items().PutItem(item)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -164,11 +191,31 @@ func (s *Server) handlerItems(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(item)
+	case http.MethodDelete:
+		vars := mux.Vars(r)
+		if id, ok := vars["id"]; ok {
+			intID, err := strconv.Atoi(id)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				fmt.Fprintln(w, err)
+				return
+			}
+
+			if err := s.storage.Items().DeleteItem(model.ItemID(intID)); err != nil {
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprintln(w, err)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
 
 //Start ...
 func (s *Server) Start() error {
-	s.logger.Infof("Started listening server on address \"%s\"", s.config.BindAddr)
-	return http.ListenAndServe(s.config.BindAddr, s.router)
+	s.logger.Infof("Started listening server on address \"%s\"", s.config.Server.BindAddr)
+	return http.ListenAndServe(s.config.Server.BindAddr, s.router)
 }

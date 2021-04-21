@@ -9,7 +9,7 @@ import (
 
 func TestNew(t *testing.T) {
 	type args struct {
-		config *config.ServerConfig
+		config *config.Config
 	}
 	tests := []struct {
 		name    string
@@ -19,15 +19,41 @@ func TestNew(t *testing.T) {
 		{
 			name: "Valid config",
 			args: args{
-				config: config.NewServerConfig(),
+				config: config.NewConfig(),
 			},
 			wantErr: false,
 		},
 		{
 			name: "Invalid loglevel in config",
 			args: args{
-				config: &config.ServerConfig{
-					LogLevel: "invalid",
+				config: &config.Config{
+					Server: &config.ServerConfig{
+						LogLevel: "invalid",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "MongoDB driver not implemented yet",
+			args: args{
+				config: &config.Config{
+					Server: config.NewServerConfig(),
+					Databases: &config.DatabasesConfig{
+						Driver: config.MongoDBDriver,
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid database driver in config",
+			args: args{
+				config: &config.Config{
+					Server: config.NewServerConfig(),
+					Databases: &config.DatabasesConfig{
+						Driver: "invalid driver",
+					},
 				},
 			},
 			wantErr: true,
