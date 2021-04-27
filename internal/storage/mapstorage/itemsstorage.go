@@ -12,6 +12,7 @@ import (
 
 //ItemsRepository ...
 type ItemsRepository struct {
+	nextID model.ItemID
 	mutex  sync.Mutex
 	items  map[model.ItemID]*model.Item
 	cache  *cache.Cache
@@ -31,9 +32,11 @@ func (i *ItemsRepository) GetItems() []*model.Item {
 
 //GetItem ...
 func (i *ItemsRepository) GetItem(id model.ItemID) *model.Item {
-	if item := i.cache.Get(id.GetString()); item != nil {
-		return item
-	}
+	/*
+		if item := i.cache.Get(id.GetString()); item != nil {
+			return item
+		}
+	*/
 
 	return i.items[id]
 }
@@ -44,8 +47,7 @@ func (i *ItemsRepository) PutItem(item *model.Item) (*model.Item, error) {
 		return nil, errors.New("Item is null")
 	}
 
-	newID := len(i.items) + 1
-	item.ID = model.ItemID(newID)
+	item.ID = model.ItemID(i.nextID)
 
 	logger := i.logger.WithFields(logrus.Fields{
 		"id": item.ID,
@@ -56,8 +58,11 @@ func (i *ItemsRepository) PutItem(item *model.Item) (*model.Item, error) {
 	i.mutex.Unlock()
 	logger.Infof("Created new item: %#v\n", item)
 
-	i.cache.Set(item.ID.GetString(), item)
+	/*
+		i.cache.Set(item.ID.GetString(), item)
+	*/
 
+	i.nextID++
 	return item, nil
 }
 
@@ -68,7 +73,9 @@ func (i *ItemsRepository) DeleteItem(id model.ItemID) error {
 	}
 
 	delete(i.items, id)
-	i.cache.Delete(id.GetString())
+	/*
+		i.cache.Delete(id.GetString())
+	*/
 
 	return nil
 }
