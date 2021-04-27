@@ -40,6 +40,7 @@ func (s *Storage) Items() storage.ItemsRepository {
 	cache := cache.NewCache(logger, s.config.Server.CacheExpirationTime, s.config.Server.CacheCleanupInterval)
 
 	s.itemsRepository = &ItemsRepository{
+		nextID: 1,
 		items:  make(map[model.ItemID]*model.Item),
 		cache:  cache,
 		logger: logger,

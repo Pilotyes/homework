@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="description" content="Items page">
+        <title>Items</title>
+    </head>
+    <body>
+        <h1>Items</h1>
+        <ul>
+            {{range .items}}
+                <li class="id">ID: {{.ID}}</li>
+                <li class="name">Name: {{.Name}}</li>
+                <li class="description">Description: {{.Description}}</li>
+                <li class="price">Price: {{.Price}}</li>
+            {{end}}
+        </ul>
+    </body>
+</html>

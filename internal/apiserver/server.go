@@ -1,15 +1,12 @@
 package apiserver
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"shop-api/internal/config"
-	"shop-api/internal/model"
+	"shop-api/internal/controllers"
 	"shop-api/internal/storage"
 	"shop-api/internal/storage/mapstorage"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,10 +15,11 @@ import (
 
 //Server ...
 type Server struct {
-	config  *config.Config
-	logger  *logrus.Logger
-	router  *mux.Router
-	storage storage.Storage
+	Config         *config.Config
+	ItemController *controllers.ItemController
+	Logger         *logrus.Logger
+	Router         *mux.Router
+	Storage        storage.Storage
 }
 
 //New ...
@@ -60,11 +58,14 @@ func New(mainConfig *config.Config) (*Server, error) {
 		storage = mapstorage.New(mainConfig)
 	}
 
+	itemController := controllers.NewItemController(logger, storage)
+
 	server := &Server{
-		config:  mainConfig,
-		logger:  logger,
-		router:  mux.NewRouter(),
-		storage: storage,
+		Config:         mainConfig,
+		ItemController: itemController,
+		Logger:         logger,
+		Router:         mux.NewRouter(),
+		Storage:        storage,
 	}
 
 	server.configureRouter()
@@ -73,33 +74,40 @@ func New(mainConfig *config.Config) (*Server, error) {
 }
 
 func (s *Server) configureRouter() {
-	s.router.Use(s.logRequest)
+	s.Router.Use(s.logRequest)
 
-	handlers := map[string]struct {
-		fn      func(http.ResponseWriter, *http.Request)
-		methods []string
+	handlers := []struct {
+		path   string
+		fn     func(http.ResponseWriter, *http.Request)
+		method string
 	}{
-		"/items": {
-			s.handlerItems,
-			[]string{
-				http.MethodGet,
-				http.MethodPost,
-			},
+		{
+			path:   "/items",
+			fn:     s.ItemController.GetAllItems,
+			method: http.MethodGet,
 		},
-		"/items/{id:[0-9]+}": {
-			s.handlerItems,
-			[]string{
-				http.MethodGet,
-				http.MethodDelete,
-			},
+		{
+			path:   "/items",
+			fn:     s.ItemController.PutItem,
+			method: http.MethodPost,
+		},
+		{
+			path:   "/items/{id:[0-9]+}",
+			fn:     s.ItemController.GetItem,
+			method: http.MethodGet,
+		},
+		{
+			path:   "/items/{id:[0-9]+}",
+			fn:     s.ItemController.DeleteItem,
+			method: http.MethodDelete,
 		},
 	}
 
-	for path, handler := range handlers {
-		s.router.HandleFunc(path, handler.fn).Methods(handler.methods...)
-		logger := s.logger.WithFields(logrus.Fields{
-			"path":    path,
-			"methods": handler.methods,
+	for _, handler := range handlers {
+		s.Router.HandleFunc(handler.path, handler.fn).Methods(handler.method)
+		logger := s.Logger.WithFields(logrus.Fields{
+			"path":   handler.path,
+			"method": handler.method,
 		})
 		logger.Debugln("Registered new handler")
 	}
@@ -107,7 +115,7 @@ func (s *Server) configureRouter() {
 
 func (s *Server) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := s.logger.WithFields(logrus.Fields{
+		logger := s.Logger.WithFields(logrus.Fields{
 			"remote_addr": r.RemoteAddr,
 		})
 		logger.Infof("Recieved request %s %s", r.RequestURI, r.Method)
@@ -121,101 +129,8 @@ func (s *Server) logRequest(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) handlerItems(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		vars := mux.Vars(r)
-		if id, ok := vars["id"]; ok {
-			intID, err := strconv.Atoi(id)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				fmt.Fprintln(w, err)
-				return
-			}
-
-			item := s.storage.Items().GetItem(model.ItemID(intID))
-			if item == nil {
-				w.WriteHeader(http.StatusNotFound)
-				fmt.Fprintln(w, errors.New("Item not found"))
-				return
-			}
-
-			rawJSON, err := json.Marshal(item)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, err)
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, string(rawJSON))
-		} else {
-			items := s.storage.Items().GetItems()
-
-			rawJSON, err := json.Marshal(items)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, err)
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, string(rawJSON))
-		}
-	case http.MethodPost:
-		if r.Body == nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, errors.New("Empty body"))
-			return
-		}
-
-		item := &model.Item{}
-		if err := json.NewDecoder(r.Body).Decode(item); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		if item.IsEmpty() {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, errors.New("Item must not be empty"))
-			return
-		}
-
-		item, err := s.storage.Items().PutItem(item)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(item)
-	case http.MethodDelete:
-		vars := mux.Vars(r)
-		if id, ok := vars["id"]; ok {
-			intID, err := strconv.Atoi(id)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				fmt.Fprintln(w, err)
-				return
-			}
-
-			if err := s.storage.Items().DeleteItem(model.ItemID(intID)); err != nil {
-				w.WriteHeader(http.StatusNotFound)
-				fmt.Fprintln(w, err)
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}
-}
-
 //Start ...
 func (s *Server) Start() error {
-	s.logger.Infof("Started listening server on address \"%s\"", s.config.Server.BindAddr)
-	return http.ListenAndServe(s.config.Server.BindAddr, s.router)
+	s.Logger.Infof("Started listening server on address \"%s\"", s.Config.Server.BindAddr)
+	return http.ListenAndServe(s.Config.Server.BindAddr, s.Router)
 }

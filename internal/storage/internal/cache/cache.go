@@ -57,7 +57,6 @@ func (c *Cache) Delete(id string) {
 		"id": id,
 	})
 
-	//Panic...
-	// c.Delete(id)
+	c.Delete(id)
 	logger.Debugln("Deleted item from cache")
 }
