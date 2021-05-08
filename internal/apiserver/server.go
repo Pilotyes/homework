@@ -7,6 +7,7 @@ import (
 	"shop-api/internal/controllers"
 	"shop-api/internal/storage"
 	"shop-api/internal/storage/mapstorage"
+	"shop-api/services/syncer"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -20,6 +21,7 @@ type Server struct {
 	Logger         *logrus.Logger
 	Router         *mux.Router
 	Storage        storage.Storage
+	CronJobs       []*syncer.JobService
 }
 
 //New ...
@@ -60,12 +62,20 @@ func New(mainConfig *config.Config) (*Server, error) {
 
 	itemController := controllers.NewItemController(logger, storage)
 
+	syncJob, err := syncer.NewJobService("sync job", storage, logger, mainConfig.Sync)
+	if err != nil {
+		return nil, err
+	}
+
 	server := &Server{
 		Config:         mainConfig,
 		ItemController: itemController,
 		Logger:         logger,
 		Router:         mux.NewRouter(),
 		Storage:        storage,
+		CronJobs: []*syncer.JobService{
+			syncJob,
+		},
 	}
 
 	server.configureRouter()
@@ -131,6 +141,10 @@ func (s *Server) logRequest(next http.Handler) http.Handler {
 
 //Start ...
 func (s *Server) Start() error {
-	s.Logger.Infof("Started listening server on address \"%s\"", s.Config.Server.BindAddr)
+	s.Logger.Infoln("Starting cron jobs")
+	for _, job := range s.CronJobs {
+		job.Start()
+	}
+	s.Logger.Infof("Start listening server on address \"%s\"", s.Config.Server.BindAddr)
 	return http.ListenAndServe(s.Config.Server.BindAddr, s.Router)
 }

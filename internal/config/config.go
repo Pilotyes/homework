@@ -20,6 +20,7 @@ type Config struct {
 	Databases *DatabasesConfig `toml:"databases"`
 	MongoDB   *MongoDBConfig   `toml:"mongo_db"`
 	Internal  *InternalConfig  `toml:"internal"`
+	Sync      *SyncConfig      `toml:"sync"`
 }
 
 //ServerConfig ...
@@ -45,6 +46,13 @@ type MongoDBConfig struct {
 type InternalConfig struct {
 }
 
+//SyncConfig ...
+type SyncConfig struct {
+	Hours     int    `toml:"hours"`
+	Minutes   int    `toml:"minutes"`
+	UrlToFile string `toml:"url_to_file"`
+}
+
 //NewConfig ...
 func NewConfig() *Config {
 	return &Config{
@@ -52,6 +60,7 @@ func NewConfig() *Config {
 		Databases: NewDatabasesConfig(),
 		MongoDB:   NewMongoDBConfig(),
 		Internal:  NewInternalConfig(),
+		Sync:      NewSyncConfig(),
 	}
 }
 
@@ -83,4 +92,13 @@ func NewMongoDBConfig() *MongoDBConfig {
 //NewInternalConfig ...
 func NewInternalConfig() *InternalConfig {
 	return &InternalConfig{}
+}
+
+//NewSyncConfig ...
+func NewSyncConfig() *SyncConfig {
+	return &SyncConfig{
+		Hours:     2,
+		Minutes:   0,
+		UrlToFile: "",
+	}
 }
