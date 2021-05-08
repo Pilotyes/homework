@@ -6,6 +6,14 @@ log_level = "debug"
 #cache_expiration_time = 300 #in seconds
 #cache_cleanup_interval = 600 #in seconds
 
+#----- Sync section -----
+#Time in UTC
+[sync]
+#hours = 2
+#minutes = 0
+url_to_file = "https://raw.githubusercontent.com/goarchitecture/lesson-2/feature/lesson-4/assets/discounts.csv"
+#----- Sync section end -----
+
 [databases]
 #driver = "internal"
 

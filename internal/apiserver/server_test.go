@@ -58,6 +58,17 @@ func TestNew(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Nil SyncConfig in MainConfig for sync job error",
+			args: args{
+				config: &config.Config{
+					Server:    config.NewServerConfig(),
+					Databases: config.NewDatabasesConfig(),
+					Sync:      nil,
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

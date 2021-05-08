@@ -148,8 +148,8 @@ func Test_integrate_tests(t *testing.T) {
 		{
 			path:         "/items",
 			method:       http.MethodPost,
-			requestBody:  bytes.NewBuffer([]byte(`{"name": "name1"}`)),
-			responseBody: `{"id":1,"name":"name1"}`,
+			requestBody:  bytes.NewBuffer([]byte(`{"name":"name1","description":"description1","original_price":10,"discount_price":5,"articul":100001,"category":"category1"}`)),
+			responseBody: `{"id":1,"name":"name1","description":"description1","original_price":10,"discount_price":5,"articul":100001,"category":"category1"}`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -159,7 +159,7 @@ func Test_integrate_tests(t *testing.T) {
 			path:         "/items",
 			method:       http.MethodGet,
 			requestBody:  nil,
-			responseBody: `[{"id":1,"name":"name1"}]`,
+			responseBody: `[{"id":1,"name":"name1","description":"description1","original_price":10,"discount_price":5,"articul":100001,"category":"category1"}]`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -179,7 +179,7 @@ func Test_integrate_tests(t *testing.T) {
 			path:         "/items/1",
 			method:       http.MethodGet,
 			requestBody:  nil,
-			responseBody: `{"id":1,"name":"name1"}`,
+			responseBody: `{"id":1,"name":"name1","description":"description1","original_price":10,"discount_price":5,"articul":100001,"category":"category1"}`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -189,7 +189,7 @@ func Test_integrate_tests(t *testing.T) {
 			path:         "/items/001",
 			method:       http.MethodGet,
 			requestBody:  nil,
-			responseBody: `{"id":1,"name":"name1"}`,
+			responseBody: `{"id":1,"name":"name1","description":"description1","original_price":10,"discount_price":5,"articul":100001,"category":"category1"}`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -209,7 +209,7 @@ func Test_integrate_tests(t *testing.T) {
 			path:         "/items/1?format=invalid",
 			method:       http.MethodGet,
 			requestBody:  nil,
-			responseBody: `{"id":1,"name":"name1"}`,
+			responseBody: `{"id":1,"name":"name1","description":"description1","original_price":10,"discount_price":5,"articul":100001,"category":"category1"}`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -218,8 +218,8 @@ func Test_integrate_tests(t *testing.T) {
 		{
 			path:         "/items",
 			method:       http.MethodPost,
-			requestBody:  bytes.NewBuffer([]byte(`{"description": "description2"}`)),
-			responseBody: `{"id":2,"description":"description2"}`,
+			requestBody:  bytes.NewBuffer([]byte(`{"name":"name2","description":"description2","original_price":20,"discount_price":15,"articul":100002,"category":"category2"}`)),
+			responseBody: `{"id":2,"name":"name2","description":"description2","original_price":20,"discount_price":15,"articul":100002,"category":"category2"}`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -238,7 +238,7 @@ func Test_integrate_tests(t *testing.T) {
 		{
 			path:         "/items?format=html",
 			method:       http.MethodPost,
-			requestBody:  bytes.NewBuffer([]byte(`{"description": "description3"}`)),
+			requestBody:  bytes.NewBuffer([]byte(`{"name":"name3","description":"description3","original_price":50,"discount_price":40,"articul":100003,"category":"category3"}`)),
 			responseBody: `some HTML`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeHTML},
@@ -248,8 +248,8 @@ func Test_integrate_tests(t *testing.T) {
 		{
 			path:         "/items",
 			method:       http.MethodPost,
-			requestBody:  bytes.NewBuffer([]byte(`{"description": "description4","price":1.5}`)),
-			responseBody: `{"id":4,"description":"description4","price":1.5}`,
+			requestBody:  bytes.NewBuffer([]byte(`{"name":"name4","description":"description4","original_price":40,"discount_price":30,"articul":100004,"category":"category4"}`)),
+			responseBody: `{"id":4,"name":"name4","description":"description4","original_price":40,"discount_price":30,"articul":100004,"category":"category4"}`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -259,7 +259,7 @@ func Test_integrate_tests(t *testing.T) {
 			path:         "/items",
 			method:       http.MethodGet,
 			requestBody:  nil,
-			responseBody: `[{"id":1,"name":"name1"},{"id":2,"description":"description2"},{"id":3,"description":"description3"},{"id":4,"description":"description4","price":1.5}]`,
+			responseBody: `[{"id":1,"name":"name1","description":"description1","original_price":10,"discount_price":5,"articul":100001,"category":"category1"},{"id":2,"name":"name2","description":"description2","original_price":20,"discount_price":15,"articul":100002,"category":"category2"},{"id":3,"name":"name3","description":"description3","original_price":50,"discount_price":40,"articul":100003,"category":"category3"},{"id":4,"name":"name4","description":"description4","original_price":40,"discount_price":30,"articul":100004,"category":"category4"}]`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -277,7 +277,7 @@ func Test_integrate_tests(t *testing.T) {
 			path:         "/items",
 			method:       http.MethodGet,
 			requestBody:  nil,
-			responseBody: `[{"id":2,"description":"description2"},{"id":3,"description":"description3"},{"id":4,"description":"description4","price":1.5}]`,
+			responseBody: `[{"id":2,"name":"name2","description":"description2","original_price":20,"discount_price":15,"articul":100002,"category":"category2"},{"id":3,"name":"name3","description":"description3","original_price":50,"discount_price":40,"articul":100003,"category":"category3"},{"id":4,"name":"name4","description":"description4","original_price":40,"discount_price":30,"articul":100004,"category":"category4"}]`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -296,8 +296,8 @@ func Test_integrate_tests(t *testing.T) {
 		{
 			path:         "/items",
 			method:       http.MethodPost,
-			requestBody:  bytes.NewBuffer([]byte(`{"name":"name5","description":"description5","price":5.0}`)),
-			responseBody: `{"id":5,"name":"name5","description":"description5","price":5}`,
+			requestBody:  bytes.NewBuffer([]byte(`{"name":"name5","description":"description5","original_price":60,"discount_price":50,"articul":100005,"category":"category5"}`)),
+			responseBody: `{"id":5,"name":"name5","description":"description5","original_price":60,"discount_price":50,"articul":100005,"category":"category5"}`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
@@ -331,7 +331,7 @@ func Test_integrate_tests(t *testing.T) {
 			path:         "/items",
 			method:       http.MethodGet,
 			requestBody:  nil,
-			responseBody: `[{"id":5,"name":"name5","description":"description5","price":5}]`,
+			responseBody: `[{"id":5,"name":"name5","description":"description5","original_price":60,"discount_price":50,"articul":100005,"category":"category5"}]`,
 			responseHeaders: http.Header{
 				"Content-Type": {controllers.ContentTypeJSON},
 			},
