@@ -1,13 +1,17 @@
 stages:
-  - test
   - build
+  - test
 
 format:
   stage: test
   script:
-    - go test ./...
     - go fmt ./...
     - go vet ./...
+
+test:
+  stage: test
+  script:
+    - go test ./...
 
 
 build:
