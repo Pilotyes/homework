@@ -1,0 +1,28 @@
+image: golang:latest
+
+stages:
+  - build
+  - test
+
+format:
+  stage: test
+  tags:
+    - dev
+  script:
+    - go fmt ./...
+    - go vet ./...
+
+test:
+  stage: test
+  tags:
+    - dev
+  script:
+    - go test ./...
+
+
+build:
+  stage: build
+  tags:
+    - dev
+  script:
+    - go build ./cmd/shop-api
