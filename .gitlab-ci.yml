@@ -1,0 +1,16 @@
+stages:
+  - test
+  - build
+
+format:
+  stage: test
+  script:
+    - go test ./...
+    - go fmt ./...
+    - go vet ./...
+
+
+build:
+  stage: build
+  script:
+    - go build ./cmd/shop-api

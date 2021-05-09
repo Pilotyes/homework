@@ -1,6 +1,9 @@
 run:
 	go run ./cmd/shop-api
 
+build:
+	go build ./cmd/shop-api
+
 test:
 	go test ./...
 
